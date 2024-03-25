@@ -4,6 +4,7 @@ namespace Tideways\LaravelOctane;
 
 use Closure;
 use Illuminate\Http\Request;
+use Throwable;
 
 class OctaneMiddleware
 {
@@ -27,7 +28,7 @@ class OctaneMiddleware
         } else if ($request->headers->has('X-TIDEWAYS-PROFILER')) {
             $developerSession = $request->headers->get('X-TIDEWAYS-PROFILER');
         } else if ($request->cookies->has('TIDEWAYS_SESSION')) {
-            $developerSession = $request->cookies->get('TIDEWAYS_SESSION')->getValue();
+            $developerSession = $request->cookies->get('TIDEWAYS_SESSION');
         }
 
         $service = ini_get('tideways.service') ?: 'web';
@@ -37,9 +38,13 @@ class OctaneMiddleware
         \Tideways\Profiler::setCustomVariable('http.method', $request->getMethod());
         \Tideways\Profiler::setCustomVariable('http.url', $request->getPathInfo());
 
+        if (class_exists('Tideways\Profiler', 'markAsWebTransaction')) {
+            \Tideways\Profiler::markAsWebTransaction();
+        }
+
         $referenceId = $request->query->get('_tideways_ref', $request->headers->get('X-Tideways-Ref'));
         if ($request->cookies->has('TIDEWAYS_REF')) {
-            $referenceId = $request->cookies->get('TIDEWAYS_REF')->getValue();
+            $referenceId = $request->cookies->get('TIDEWAYS_REF');
         }
 
         if ($referenceId) {
